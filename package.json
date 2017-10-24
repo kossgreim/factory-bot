@@ -1,0 +1,15 @@
+{
+  "name": "factory-bot",
+  "version": "0.0.1",
+  "description": "FactoryBot is used to create test models",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "testing",
+    "tests"
+  ],
+  "author": "Ivan Lukasevych",
+  "license": "ISC"
+}
