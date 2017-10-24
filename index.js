@@ -22,7 +22,8 @@ function build(name, additionalData = {}) {
   if (Object.keys(additionalData).length) {
     factory = Object.assign(factory, additionalData)
   }
-  return models[name].build(factory)
+  const modelName = factory.__properties && factory.__properties.modelName ? factory.__properties.modelName : name
+  return models[modelName].build(_purifyFactory(factory))
 }
 
 function create(name, additionalData = {}) {
@@ -39,6 +40,11 @@ function _addProperties(obj, modelName) {
   return Object.assign(obj, { __properties: {
     modelName: modelName
   }})
+}
+
+function _purifyFactory(factory) {
+  delete factory.__properties
+  return factory
 }
 
 exports = {
