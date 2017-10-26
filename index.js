@@ -1,55 +1,65 @@
-const ORMIntegration = require('./utils/orm-integration')
+const ORMIntegrator = require('./utils/orm-integrator')
+const config = require('./config')
 
-const factories = {}
-const models = ORMIntegration.fetchModelsInstances()
+const ormIntegrator = new ORMIntegrator({}, config.ORM.name)
 
-function define(name, factory, options = {}) {
-  if (factories.hasOwnProperty(name)) {
-    throw new Error(`Factory ${name} is already defined.`)
+class FactoryNode {
+  constructor() {
+    this._factories = {}
+    this.models = ormIntegrator.getModels()
   }
-  factories[name] = _addProperties(factory, options.modelName ? options.modelName : name)
-}
 
-function defineAs(factoryName, newName, newData) {
-  _checkFactoryExistence(factoryName)
-  let currentFactory = factories[factoryName]
-  define(newName, Object.assign(currentFactory, newData), { modelName: factoryName })
-}
-
-function build(name, additionalData = {}) {
-  _checkFactoryExistence()
-  let factory = factories[name]
-  if (Object.keys(additionalData).length) {
-    factory = Object.assign(factory, additionalData)
+  define(name, factory, options = {}) {
+    if (this._factories.hasOwnProperty(name)) {
+      throw new Error(`Factory ${name} is already defined.`)
+    }
+    this._factories[name] = this._addProperties(factory, options.modelName ? options.modelName : name)
   }
-  const modelName = factory.__properties && factory.__properties.modelName ? factory.__properties.modelName : name
-  return models[modelName].build(_purifyFactory(factory))
-}
 
-function create(name, additionalData = {}) {
-  return models[name].create(build(name, additionalData))
-}
+  defineAs(factoryName, newName, newData) {
+    this._checkFactoryExistence(factoryName)
+    let currentFactory = this._factories[factoryName]
+    this.define(newName, Object.assign(currentFactory, newData), { modelName: factoryName })
+  }
 
-function _checkFactoryExistence(name) {
-  if (!factories.hasOwnProperty(name)) {
-    throw new Error(`Factory ${name} has not been defined`)
+  build(name, additionalData = {}) {
+    this._checkFactoryExistence()
+    let factory = this._factories[name]
+    if (Object.keys(additionalData).length) {
+      factory = Object.assign(factory, additionalData)
+    }
+    const modelName = factory.__properties && factory.__properties.modelName ? factory.__properties.modelName : name
+    return this.models[modelName].build(this._purifyFactory(factory))
+  }
+
+  create(name, additionalData = {}) {
+    return this.models[name].create(this.build(name, additionalData))
+  }
+
+  getAllFactories() {
+    return this._factories;
+  }
+
+  _checkFactoryExistence(name) {
+    if (!this._factories.hasOwnProperty(name)) {
+      throw new Error(`Factory ${name} has not been defined`)
+    }
+  }
+
+  _addProperties(obj, modelName) {
+    return Object.assign(obj, { __properties: {
+      modelName: modelName
+    }})
+  }
+
+  _purifyFactory(factory) {
+    delete factory.__properties
+    return factory
   }
 }
 
-function _addProperties(obj, modelName) {
-  return Object.assign(obj, { __properties: {
-    modelName: modelName
-  }})
-}
+const factoryNode = new FactoryNode()
 
-function _purifyFactory(factory) {
-  delete factory.__properties
-  return factory
-}
+module.exports = factoryNode
 
-exports = {
-  build,
-  define,
-  defineAs,
-  create
-};
+
